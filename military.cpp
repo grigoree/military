@@ -3,6 +3,9 @@
 #include <bitset>
 #include <string>
 #include <vector>
+#include <cmath>
+#include <stdlib.h>
+#include "table.h"
 
 using namespace std;
 
@@ -27,52 +30,83 @@ static const unsigned char kPi[256] =
 };
 
 
-// X
+static const  unsigned char kB[16] = {148, 32, 133, 16, 194, 192, 1, 251, 1, 192, 194, 16, 133, 32, 148, 1};
 
-bitset<4>* funcX(char a[33], char k[33]) {
-    
-    bitset<4>* result = new bitset<4>[32];
-    
-    cout << "X: ";
-    
-    for (int i = 0; i < 32; i++) {
-        
-        int a_temp, k_temp;
-        
+vector<bitset<4> > CharToBitset4(char a[33])
+{
+    vector<bitset<4> > result(32);
+    for (int i = 0; i < 32; i++) 
+    {
         string a_string, k_string;
         
         a_string += a[i];
-        k_string += k[i];
-        
-        bitset<4> a_bin;
-        bitset<4> k_bin;
-        
-        // функция переводит строку в поток с атрибутом hex 
-        istringstream(a_string) >> hex >> a_temp;
-        istringstream(k_string) >> hex >> k_temp;
-         
-        a_bin = a_temp;
-        k_bin = k_temp;
 
-        bitset<4> temp = a_bin ^ k_bin;
-        
+        bitset<4> a_bin;
+        int a_temp;
+        istringstream(a_string) >> hex >> a_temp;
+        a_bin = a_temp;
         // отладочная печать: без to_ulong() распечатает в двоичном виде
-        cout << hex << temp.to_ulong();
-         
-        result[i] = temp;
+        //cout << hex << a_bin.to_ulong()<<endl;
+        result[i] = a_bin;
     }
-    cout << endl;
+    return result;
+}
+
+vector<bitset<8> > CharToBitset8(char a[16])
+{
+    vector<bitset<8> > result(16);
+    for (int i = 0; i < 16; i++) 
+    {
+        string a_string, k_string;
+        
+        a_string += a[i];
+
+        bitset<8> a_bin;
+        int a_temp;
+        istringstream(a_string) >> hex >> a_temp;
+        a_bin = a_temp;
+        // отладочная печать: без to_ulong() распечатает в двоичном виде
+        //cout << hex << a_bin.to_ulong()<<endl;
+        result[i] = a_bin;
+    }
+    return result;
+}
+
+string Bitset8ToChar(vector<bitset<8> > in) {
+    string result;
+    
+    for (int i = 0; i < in.size(); i++){
+        std::stringstream stream;
+        stream << std::hex << in[i].to_ulong();
+        std::string temp( stream.str() );
+        result += temp;
+    }
+    
+    return result;
+}
+
+
+// X
+
+vector<bitset<4> > funcX(vector<bitset<4> > a,vector<bitset<4> > k) {
+    
+    vector<bitset<4> > result(32);
+
+    for(int i = 0; i < 32; i++)
+    {    
+        result[i] = a[i] ^ k[i];
+        //cout << hex << result[i].to_ulong();
+    }
+    //cout<<endl;
     return result;
 }
 
 // S
 
-bitset<8>* funcS(bitset<4>* in) {
+vector<bitset<8> > funcS(vector<bitset<4> > in) {
     
-    bitset<8>* temp = new bitset<8>(16);
-    bitset<8>* result = new bitset<8>(16);
-    
-    cout << "S: ";
+    vector<bitset<8> > temp(16);
+    vector<bitset<8> > result(16);
     
     for (int i = 0; i < 16; i++) {
         
@@ -81,21 +115,130 @@ bitset<8>* funcS(bitset<4>* in) {
         
         temp[i] = temp1 + temp2;
         result[i] = kPi[(int)temp[i].to_ulong()];
-        
-        cout << hex << result[i].to_ulong();
     }
-    
-    cout << endl;
     
     return result;
 }
 
+vector<bitset<8> > funcR(vector<bitset<8> > in) {
+
+    vector<bitset<8> > result(16);
+
+    int sum = 0;
+
+    for(int i = 0; i < 16; ++i) {
+        sum ^= multTable[in[i].to_ulong() * 256 + kB[i]];
+    }
+
+    result[0] = sum;
+
+    for (int i = 0; i < 15; ++i) {
+        result[i + 1] = in[i];
+    }
+
+    return result;
+
+}
+
+vector<bitset<8> > funcL(vector<bitset<8> > in) {
+    vector<bitset<8> > temp(16);
+    vector<bitset<8> > result(16);
+
+    result = in;
+
+    for (int i = 0; i < 16; i++) {
+        temp = result;
+        result = funcR(temp);
+    }
+
+    return result;
+}
+
+vector<bitset<8> > funcLSX(vector<bitset<4> > a, vector<bitset<4> > key) {
+
+    vector<bitset<8> > result(16);
+    result = funcL(funcS(funcX(a,key)));
+
+    cout << "LSX: ";
+    for (int i = 0; i < 16; i++)
+        cout << hex << result[i].to_ulong();
+    cout << endl;
+
+    return result;
+}
+
+vector<bitset<8> > funcC(int i) {
+
+    vector<bitset<8> > in(16);
+    vector<bitset<8> > result(16);
+
+    for (int i = 0; i < 15; i++)
+        in[i] = 0;
+
+    in[15] = i;
+
+    result = funcL(in);
+    cout << "C: ";
+    for (int i = 0; i < 16; i++)
+          cout << hex << result[i].to_ulong();
+    cout << endl;
+    
+    cout << Bitset8ToChar(result);
+
+    return result;
+}
+/*
+int funcF(vector<bitset<4> > key1, vector<bitset<4> > key2, vector<bitset<8> > C, string keyout1, string keyout2) {
+    
+    vector<bitset<8> > temp(16);
+    vector<bitset<4> > result(32);
+    
+    string tempC, tempLSX;
+
+    for (int i = 0; i < 16; i++)
+        tempC += C[i].to_ulong();
+
+    temp = funcLSX(tempC, key1);
+
+    for (int i = 0; i < 16; i++)
+        tempLSX += temp[i].to_ulong();
+
+    result = funcX(tempLSX, key2);
+
+    for (int i = 0; i < 32; i++)
+        //keyout1 += result[i].to_string();
+        cout << hex << result[i].to_ulong();
+
+    keyout2 = key1;
+    //cout << "K1: " << keyout1 << endl;
+    //cout << "K2: " << keyout2;
+
+    return 0;    
+}
+*/
 int main() {
 
     char a[33] = "1122334455667700ffeeddccbbaa9988";
-    char k[33] = "8899aabbccddeeff0011223344556677";
-    
-    funcS(funcX(a, k));
+    char k1[33] = "8899aabbccddeeff0011223344556677";
+    char k2[33] = "fedcba98765432100123456789abcdef";
+    string a_string, k1_string, k2_string, ktemp1, ktemp2;
+           
+    vector<bitset<4> > a_binary(32),a_temp4(32);
+    vector<bitset<4> > k1_binary(32),k1_temp4(32);
+    vector<bitset<4> > k2_binary(32),k2_temp4(32);
+    vector<bitset<8> > a_temp8(16), C(16);
+
+
+    a_binary = CharToBitset4(a);
+    k1_binary = CharToBitset4(k1);
+    k2_binary = CharToBitset4(k2);
+
+
+    funcLSX(a_binary,k1_binary);
+    C = funcC(1);
+
+   // funcF(k1,k2,C,ktemp1, ktemp2);
+
 
     return 0;
 }
