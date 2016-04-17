@@ -32,7 +32,7 @@ static const unsigned char kPi[256] =
 
 static const  unsigned char kB[16] = {148, 32, 133, 16, 194, 192, 1, 251, 1, 192, 194, 16, 133, 32, 148, 1};
 
-vector<bitset<4> > CharToBitset4(char a[33])
+vector<bitset<4> > CharToBitset4(string a)
 {
     vector<bitset<4> > result(32);
     for (int i = 0; i < 32; i++) 
@@ -52,14 +52,15 @@ vector<bitset<4> > CharToBitset4(char a[33])
     return result;
 }
 
-vector<bitset<8> > CharToBitset8(char a[16])
+vector<bitset<8> > CharToBitset8(string a)
 {
     vector<bitset<8> > result(16);
     for (int i = 0; i < 16; i++) 
     {
         string a_string, k_string;
         
-        a_string += a[i];
+        a_string += a[2 * i];
+        a_string += a[2 * i + 1];
 
         bitset<8> a_bin;
         int a_temp;
@@ -85,19 +86,35 @@ string Bitset8ToChar(vector<bitset<8> > in) {
     return result;
 }
 
+vector<bitset<4> > bitset8to4(vector<bitset<8> > in){
+    vector<bitset<4> > result(32);
+    
+    for (int i = 0; i < 16; i++){
+        int temp1 = (in[i].to_ulong() >> 4) % 16 ;
+        int temp2 = in[i].to_ulong() % 16;
+        
+        result[2 * i] = temp1;
+        result[2 * i + 1] = temp2;
+    }
+    
+    return result;
+}
+
 
 // X
 
 vector<bitset<4> > funcX(vector<bitset<4> > a,vector<bitset<4> > k) {
     
     vector<bitset<4> > result(32);
+    
+    cout << "X: ";
 
     for(int i = 0; i < 32; i++)
     {    
         result[i] = a[i] ^ k[i];
-        //cout << hex << result[i].to_ulong();
+        cout << hex << result[i].to_ulong();
     }
-    //cout<<endl;
+    cout<<endl;
     return result;
 }
 
@@ -108,14 +125,19 @@ vector<bitset<8> > funcS(vector<bitset<4> > in) {
     vector<bitset<8> > temp(16);
     vector<bitset<8> > result(16);
     
+    cout << "S: ";
+    
     for (int i = 0; i < 16; i++) {
         
-        int temp1 = in[i * 2].to_ulong();
-        int temp2 = in[i * 2 + 1].to_ulong() << 4;
+        int temp1 = in[i * 2].to_ulong() << 4;
+        int temp2 = in[i * 2 + 1].to_ulong();
         
         temp[i] = temp1 + temp2;
         result[i] = kPi[(int)temp[i].to_ulong()];
+        cout << hex << result[i].to_ulong();
     }
+    
+    cout << endl;
     
     return result;
 }
@@ -182,62 +204,42 @@ vector<bitset<8> > funcC(int i) {
     for (int i = 0; i < 16; i++)
           cout << hex << result[i].to_ulong();
     cout << endl;
-    
-    cout << Bitset8ToChar(result);
 
     return result;
 }
-/*
-int funcF(vector<bitset<4> > key1, vector<bitset<4> > key2, vector<bitset<8> > C, string keyout1, string keyout2) {
+
+int funcF(vector<bitset<4> > key1, vector<bitset<4> > key2, vector<bitset<8> > C) {
     
     vector<bitset<8> > temp(16);
-    vector<bitset<4> > result(32);
+    vector<bitset<4> > result(32), tempC(32);
     
-    string tempC, tempLSX;
+    tempC = bitset8to4(C);
+    temp = funcLSX(tempC, key1);  
+    
+    return 0;
+} 
 
-    for (int i = 0; i < 16; i++)
-        tempC += C[i].to_ulong();
-
-    temp = funcLSX(tempC, key1);
-
-    for (int i = 0; i < 16; i++)
-        tempLSX += temp[i].to_ulong();
-
-    result = funcX(tempLSX, key2);
-
-    for (int i = 0; i < 32; i++)
-        //keyout1 += result[i].to_string();
-        cout << hex << result[i].to_ulong();
-
-    keyout2 = key1;
-    //cout << "K1: " << keyout1 << endl;
-    //cout << "K2: " << keyout2;
-
-    return 0;    
-}
-*/
 int main() {
 
-    char a[33] = "1122334455667700ffeeddccbbaa9988";
-    char k1[33] = "8899aabbccddeeff0011223344556677";
-    char k2[33] = "fedcba98765432100123456789abcdef";
+    string a = "1122334455667700ffeeddccbbaa9988";
+    string k1 = "8899aabbccddeeff0011223344556677";
+    string k2 = "fedcba98765432100123456789abcdef";
     string a_string, k1_string, k2_string, ktemp1, ktemp2;
            
-    vector<bitset<4> > a_binary(32),a_temp4(32);
+    vector<bitset<4> > a_binary(32),a_temp4(32), test1(32), test3(32);
     vector<bitset<4> > k1_binary(32),k1_temp4(32);
     vector<bitset<4> > k2_binary(32),k2_temp4(32);
-    vector<bitset<8> > a_temp8(16), C(16);
+    vector<bitset<8> > a_temp8(16), C(16), test2(16);
 
 
     a_binary = CharToBitset4(a);
     k1_binary = CharToBitset4(k1);
     k2_binary = CharToBitset4(k2);
-
-
-    funcLSX(a_binary,k1_binary);
+    
+    //funcLSX(a_binary,k1_binary);
     C = funcC(1);
-
-   // funcF(k1,k2,C,ktemp1, ktemp2);
+    
+    funcF(k1_binary, k2_binary, C);
 
 
     return 0;
