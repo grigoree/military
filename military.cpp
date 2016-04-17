@@ -120,14 +120,14 @@ vector<bitset<4> > funcX(vector<bitset<4> > a,vector<bitset<4> > k) {
     
     vector<bitset<4> > result(32);
     
-    cout << "X: ";
+    //cout << "X: ";
 
     for(int i = 0; i < 32; i++)
     {    
         result[i] = a[i] ^ k[i];
-        cout << hex << result[i].to_ulong();
+        //cout << hex << result[i].to_ulong();
     }
-    cout<<endl;
+    //cout<<endl;
     return result;
 }
 
@@ -137,7 +137,7 @@ vector<bitset<8> > funcS(vector<bitset<4> > in) {
     
     vector<bitset<8> > result(16);
     
-    cout << "S: ";
+    //cout << "S: ";
     
     for (int i = 0; i < 16; i++) {
         
@@ -146,10 +146,10 @@ vector<bitset<8> > funcS(vector<bitset<4> > in) {
         int temp = temp1 + temp2;
         
         result[i] = kPi[temp];
-        cout << hex << result[i].to_ulong();
+        //cout << hex << result[i].to_ulong();
     }
     
-    cout << endl;
+    //cout << endl;
     
     return result;
 }
@@ -253,12 +253,25 @@ vector<bitset<8> > funcReverseL(vector<bitset<8> > in) {
     return result;
 }
 
-//======== LSX ==========
+//======== LSX и обратная ==========
 
 vector<bitset<8> > funcLSX(vector<bitset<4> > a, vector<bitset<4> > key) {
 
     vector<bitset<8> > result(16);
     result = funcL(funcS(funcX(a,key)));
+
+    /*cout << "LSX: ";
+    for (int i = 0; i < 16; i++)
+        cout << hex << result[i].to_ulong();
+    cout << endl;*/
+
+    return result;
+}
+/*
+vector<bitset<8> > funcReverseLSX(vector<bitset<4> > a, vector<bitset<4> > key) {
+
+    vector<bitset<8> > result(16);
+    result = funcReverseL(funcReverseS(funcX(a,key)));
 
     cout << "LSX: ";
     for (int i = 0; i < 16; i++)
@@ -267,6 +280,7 @@ vector<bitset<8> > funcLSX(vector<bitset<4> > a, vector<bitset<4> > key) {
 
     return result;
 }
+*/
 
 // ========= C ==============
 
@@ -281,26 +295,116 @@ vector<bitset<8> > funcC(int i) {
     in[15] = i;
 
     result = funcL(in);
-    cout << "C: ";
+    /*cout << "C: ";
     for (int i = 0; i < 16; i++)
           cout << hex << result[i].to_ulong();
-    cout << endl;
+    cout << endl;*/
 
     return result;
 }
 
 // ============= F ================
 
-int funcF(vector<bitset<4> > key1, vector<bitset<4> > key2, vector<bitset<8> > C) {
+int funcF(vector<bitset<4> > key1, vector<bitset<4> > key2, vector<bitset<8> > C,vector<bitset<4> >& output_key1, vector<bitset<4> >& output_key2) {
     
     vector<bitset<8> > temp(16);
     vector<bitset<4> > result(32), tempC(32);
-    
+    //cout << "F: ";
+    output_key2 = key1;
     tempC = bitset8to4(C);
-    temp = funcLSX(tempC, key1);  
-    
+    temp = funcLSX(tempC, key1);
+    tempC = bitset8to4(temp);  
+    output_key1 = funcX(tempC,key2);
     return 0;
 } 
+
+vector<vector<bitset<4> > > expandKeys(vector<bitset<4> > key1, vector<bitset<4> > key2)
+{
+    vector<vector<bitset<4> > > result(10);
+    vector<bitset<4> > tempkey1(32), tempkey2(32);
+    result[0] = key1;
+    result[1] = key2;
+    tempkey1 = key1;
+    tempkey2 = key2;
+
+    for(int j = 0; j < 4; j++)
+    {
+            for(int i = 1; i < 9; i++ )
+            {
+                vector<bitset<8> > C(16);
+                C = funcC(j*8+i);
+                funcF(tempkey1, tempkey2, C, tempkey1, tempkey2);
+            }
+
+        result[2*j+2] = tempkey1;
+        result[2*j+3] = tempkey2;
+    }
+
+    /*for(int i = 0;i<10;i++)
+    {
+        for(int j = 0;j<32;j++)
+        {
+                      cout << hex << result[i][j].to_ulong();
+
+        }
+        cout<<endl;
+    }*/
+    return result;
+}
+
+int Encrypt(string a, string k1, string k2)
+{
+    vector<vector<bitset<4> > > keys(10);
+    vector<bitset<4> > a_binary(32), k1_binary(32), k2_binary(32), tempLSX4(32), result(32);
+    vector<bitset<8> > tempLSX8(16);
+    a_binary = CharToBitset4(a);
+    k1_binary = CharToBitset4(k1);
+    k2_binary = CharToBitset4(k2);
+
+    keys = expandKeys(k1_binary, k2_binary);
+    tempLSX8 = funcLSX(a_binary,keys[0]);
+    for(int i = 1; i < 9; i++)
+    {
+        tempLSX4 = bitset8to4(tempLSX8);
+        tempLSX8 = funcLSX(tempLSX4,keys[i]);
+    }
+    tempLSX4 = bitset8to4(tempLSX8);
+    result = funcX(tempLSX4, keys[9]);
+
+        for (int i = 0; i < 32; i++)
+          cout << hex << result[i].to_ulong();
+    cout << endl;
+
+    return 0;
+}
+/*
+int Decrypt(string a, string k1, string k2)
+{
+    vector<vector<bitset<4> > > keys(10);
+    vector<bitset<4> > a_binary(32), k1_binary(32), k2_binary(32), tempLSX4(32), result(32);
+    vector<bitset<8> > tempLSX8(16);
+    a_binary = CharToBitset4(a);
+    k1_binary = CharToBitset4(k1);
+    k2_binary = CharToBitset4(k2);
+
+    keys = expandKeys(k1_binary, k2_binary);
+    tempLSX4 = funcX(a, keys[9]);
+    tempLSX8 = funcLSX(a_binary,keys[0]);
+    for(int i = 1; i < 9; i++)
+    {
+        tempLSX4 = bitset8to4(tempLSX8);
+        tempLSX8 = funcLSX(tempLSX4,keys[i]);
+    }
+    tempLSX4 = bitset8to4(tempLSX8);
+    result = funcX(tempLSX4, keys[9]);
+
+        for (int i = 0; i < 32; i++)
+          cout << hex << result[i].to_ulong();
+    cout << endl;
+
+    return 0;
+}
+*/
 
 int main() {
 
@@ -315,7 +419,7 @@ int main() {
     vector<bitset<8> > a_temp8(16), C(16), test2(16), test4(16);
 
 
-    a_binary = CharToBitset4(a);
+    /*a_binary = CharToBitset4(a);
     k1_binary = CharToBitset4(k1);
     k2_binary = CharToBitset4(k2);
     
@@ -327,13 +431,9 @@ int main() {
     
     test1 = bitset8to4(test4);
     
-    funcReverseS(test1);
-    
-    //funcLSX(a_binary,k1_binary);
-    //C = funcC(1);
-    
-    //funcF(k1_binary, k2_binary, C);
+    funcReverseS(test1);*/
 
+    Encrypt(a,k1,k2);
 
     return 0;
 }
