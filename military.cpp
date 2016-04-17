@@ -29,8 +29,30 @@ static const unsigned char kPi[256] =
 	 89, 166, 116, 210, 230, 244, 180, 192,	209, 102, 175, 194,  57,  75,  99, 182
 };
 
+static const unsigned char kReversePi[256] =
+{
+     0xa5,0x2d,0x32,0x8f,0x0e,0x30,0x38,0xc0,0x54,0xe6,0x9e,0x39,0x55,0x7e,0x52,0x91,
+     0x64,0x03,0x57,0x5a,0x1c,0x60,0x07,0x18,0x21,0x72,0xa8,0xd1,0x29,0xc6,0xa4,0x3f,
+     0xe0,0x27,0x8d,0x0c,0x82,0xea,0xae,0xb4,0x9a,0x63,0x49,0xe5,0x42,0xe4,0x15,0xb7,
+     0xc8,0x06,0x70,0x9d,0x41,0x75,0x19,0xc9,0xaa,0xfc,0x4d,0xbf,0x2a,0x73,0x84,0xd5,
+     0xc3,0xaf,0x2b,0x86,0xa7,0xb1,0xb2,0x5b,0x46,0xd3,0x9f,0xfd,0xd4,0x0f,0x9c,0x2f,
+     0x9b,0x43,0xef,0xd9,0x79,0xb6,0x53,0x7f,0xc1,0xf0,0x23,0xe7,0x25,0x5e,0xb5,0x1e,
+     0xa2,0xdf,0xa6,0xfe,0xac,0x22,0xf9,0xe2,0x4a,0xbc,0x35,0xca,0xee,0x78,0x05,0x6b,
+     0x51,0xe1,0x59,0xa3,0xf2,0x71,0x56,0x11,0x6a,0x89,0x94,0x65,0x8c,0xbb,0x77,0x3c,
+     0x7b,0x28,0xab,0xd2,0x31,0xde,0xc4,0x5f,0xcc,0xcf,0x76,0x2c,0xb8,0xd8,0x2e,0x36,
+     0xdb,0x69,0xb3,0x14,0x95,0xbe,0x62,0xa1,0x3b,0x16,0x66,0xe9,0x5c,0x6c,0x6d,0xad,
+     0x37,0x61,0x4b,0xb9,0xe3,0xba,0xf1,0xa0,0x85,0x83,0xda,0x47,0xc5,0xb0,0x33,0xfa,
+     0x96,0x6f,0x6e,0xc2,0xf6,0x50,0xff,0x5d,0xa9,0x8e,0x17,0x1b,0x97,0x7d,0xec,0x58,
+     0xf7,0x1f,0xfb,0x7c,0x09,0x0d,0x7a,0x67,0x45,0x87,0xdc,0xe8,0x4f,0x1d,0x4e,0x04,
+     0xeb,0xf8,0xf3,0x3e,0x3d,0xbd,0x8a,0x88,0xdd,0xcd,0x0b,0x13,0x98,0x02,0x93,0x80,
+     0x90,0xd0,0x24,0x34,0xcb,0xed,0xf4,0xce,0x99,0x10,0x44,0x40,0x92,0x3a,0x01,0x26,
+     0x12,0x1a,0x48,0x68,0xf5,0x81,0x8b,0xc7,0xd6,0x20,0x0a,0x08,0x00,0x4c,0xd7,0x74
+};
+
 
 static const  unsigned char kB[16] = {148, 32, 133, 16, 194, 192, 1, 251, 1, 192, 194, 16, 133, 32, 148, 1};
+
+// ======= преобразование из string в bitset4 ======
 
 vector<bitset<4> > CharToBitset4(string a)
 {
@@ -51,6 +73,8 @@ vector<bitset<4> > CharToBitset4(string a)
     }
     return result;
 }
+
+// ======= преобразование из string в bitset8 ======
 
 vector<bitset<8> > CharToBitset8(string a)
 {
@@ -73,18 +97,7 @@ vector<bitset<8> > CharToBitset8(string a)
     return result;
 }
 
-string Bitset8ToChar(vector<bitset<8> > in) {
-    string result;
-    
-    for (int i = 0; i < in.size(); i++){
-        std::stringstream stream;
-        stream << std::hex << in[i].to_ulong();
-        std::string temp( stream.str() );
-        result += temp;
-    }
-    
-    return result;
-}
+// ======= преобразование из bitset8 в bitset4 ======
 
 vector<bitset<4> > bitset8to4(vector<bitset<8> > in){
     vector<bitset<4> > result(32);
@@ -101,7 +114,7 @@ vector<bitset<4> > bitset8to4(vector<bitset<8> > in){
 }
 
 
-// X
+//======== X ==========
 
 vector<bitset<4> > funcX(vector<bitset<4> > a,vector<bitset<4> > k) {
     
@@ -118,11 +131,10 @@ vector<bitset<4> > funcX(vector<bitset<4> > a,vector<bitset<4> > k) {
     return result;
 }
 
-// S
+//======== S и обратная ==========
 
 vector<bitset<8> > funcS(vector<bitset<4> > in) {
     
-    vector<bitset<8> > temp(16);
     vector<bitset<8> > result(16);
     
     cout << "S: ";
@@ -131,9 +143,9 @@ vector<bitset<8> > funcS(vector<bitset<4> > in) {
         
         int temp1 = in[i * 2].to_ulong() << 4;
         int temp2 = in[i * 2 + 1].to_ulong();
+        int temp = temp1 + temp2;
         
-        temp[i] = temp1 + temp2;
-        result[i] = kPi[(int)temp[i].to_ulong()];
+        result[i] = kPi[temp];
         cout << hex << result[i].to_ulong();
     }
     
@@ -141,6 +153,27 @@ vector<bitset<8> > funcS(vector<bitset<4> > in) {
     
     return result;
 }
+
+vector<bitset<8> > funcReverseS(vector<bitset<4> > in) {
+    vector<bitset<8> > result(16);
+    
+    
+    cout << "reverseS: ";
+    for (int i = 0; i < 16; i++) {
+        
+        int temp1 = in[i * 2].to_ulong() << 4;
+        int temp2 = in[i * 2 + 1].to_ulong();
+        int temp = temp1 + temp2;
+        
+        result[i] = kReversePi[temp];
+        cout << hex << result[i].to_ulong();
+    }
+    cout << endl;
+    
+    return result;
+}
+
+//======== R и обратная ==========
 
 vector<bitset<8> > funcR(vector<bitset<8> > in) {
 
@@ -162,6 +195,36 @@ vector<bitset<8> > funcR(vector<bitset<8> > in) {
 
 }
 
+vector<bitset<8> > funcReverseR(vector<bitset<8> > in) {
+
+    vector<bitset<8> > result(16);
+    vector<bitset<8> > temp(16);
+    int sum = 0;
+    
+    for (int i = 0; i < 15; i ++)
+        temp[i] = in[i + 1];
+    
+    temp[15] = in[0];
+
+    for(int i = 0; i < 16; ++i) {
+        sum ^= multTable[temp[i].to_ulong() * 256 + kB[i]];
+    }
+    
+    for (int i = 0; i < 15; i ++)
+        result[i] = temp[i];
+
+    result[15] = sum;
+    
+    cout << "reverseR: ";
+    for (int i = 0; i < 16; i++)
+        cout << hex << result[i].to_ulong();
+    cout << endl;
+
+    return result;
+}
+
+//======== L и обратная ==========
+
 vector<bitset<8> > funcL(vector<bitset<8> > in) {
     vector<bitset<8> > temp(16);
     vector<bitset<8> > result(16);
@@ -176,6 +239,22 @@ vector<bitset<8> > funcL(vector<bitset<8> > in) {
     return result;
 }
 
+vector<bitset<8> > funcReverseL(vector<bitset<8> > in) {
+    vector<bitset<8> > temp(16);
+    vector<bitset<8> > result(16);
+
+    result = in;
+
+    for (int i = 0; i < 16; i++) {
+        temp = result;
+        result = funcReverseR(temp);
+    }
+
+    return result;
+}
+
+//======== LSX ==========
+
 vector<bitset<8> > funcLSX(vector<bitset<4> > a, vector<bitset<4> > key) {
 
     vector<bitset<8> > result(16);
@@ -188,6 +267,8 @@ vector<bitset<8> > funcLSX(vector<bitset<4> > a, vector<bitset<4> > key) {
 
     return result;
 }
+
+// ========= C ==============
 
 vector<bitset<8> > funcC(int i) {
 
@@ -207,6 +288,8 @@ vector<bitset<8> > funcC(int i) {
 
     return result;
 }
+
+// ============= F ================
 
 int funcF(vector<bitset<4> > key1, vector<bitset<4> > key2, vector<bitset<8> > C) {
     
@@ -229,17 +312,27 @@ int main() {
     vector<bitset<4> > a_binary(32),a_temp4(32), test1(32), test3(32);
     vector<bitset<4> > k1_binary(32),k1_temp4(32);
     vector<bitset<4> > k2_binary(32),k2_temp4(32);
-    vector<bitset<8> > a_temp8(16), C(16), test2(16);
+    vector<bitset<8> > a_temp8(16), C(16), test2(16), test4(16);
 
 
     a_binary = CharToBitset4(a);
     k1_binary = CharToBitset4(k1);
     k2_binary = CharToBitset4(k2);
     
-    //funcLSX(a_binary,k1_binary);
-    C = funcC(1);
+    string test = "0d8e40e4a800d06b2f1b37ea379ead8e";
     
-    funcF(k1_binary, k2_binary, C);
+    test2 = CharToBitset8(test);
+    
+    test4 = funcReverseL(test2);
+    
+    test1 = bitset8to4(test4);
+    
+    funcReverseS(test1);
+    
+    //funcLSX(a_binary,k1_binary);
+    //C = funcC(1);
+    
+    //funcF(k1_binary, k2_binary, C);
 
 
     return 0;
