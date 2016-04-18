@@ -113,6 +113,19 @@ vector<bitset<4> > bitset8to4(vector<bitset<8> > in){
     return result;
 }
 
+vector<bitset<8> > bitset4to8(vector<bitset<4> > in)
+{
+        vector<bitset<8> > result(16);
+
+        for (int i = 0; i < 16; i++){
+        int temp1 = in[i * 2].to_ulong() << 4;
+        int temp2 = in[i * 2 + 1].to_ulong();
+        int temp = temp1 + temp2;
+        result[i] = temp;
+    }
+        return result;
+}
+
 
 //======== X ==========
 
@@ -158,7 +171,7 @@ vector<bitset<8> > funcReverseS(vector<bitset<4> > in) {
     vector<bitset<8> > result(16);
     
     
-    cout << "reverseS: ";
+    //cout << "reverseS: ";
     for (int i = 0; i < 16; i++) {
         
         int temp1 = in[i * 2].to_ulong() << 4;
@@ -166,9 +179,9 @@ vector<bitset<8> > funcReverseS(vector<bitset<4> > in) {
         int temp = temp1 + temp2;
         
         result[i] = kReversePi[temp];
-        cout << hex << result[i].to_ulong();
+       // cout << hex << result[i].to_ulong();
     }
-    cout << endl;
+    //cout << endl;
     
     return result;
 }
@@ -215,10 +228,10 @@ vector<bitset<8> > funcReverseR(vector<bitset<8> > in) {
 
     result[15] = sum;
     
-    cout << "reverseR: ";
+    /*cout << "reverseR: ";
     for (int i = 0; i < 16; i++)
         cout << hex << result[i].to_ulong();
-    cout << endl;
+    cout << endl;*/
 
     return result;
 }
@@ -267,20 +280,26 @@ vector<bitset<8> > funcLSX(vector<bitset<4> > a, vector<bitset<4> > key) {
 
     return result;
 }
-/*
+
 vector<bitset<8> > funcReverseLSX(vector<bitset<4> > a, vector<bitset<4> > key) {
 
     vector<bitset<8> > result(16);
-    result = funcReverseL(funcReverseS(funcX(a,key)));
+    vector<bitset<4> > temp(32);
 
-    cout << "LSX: ";
+    temp = funcX(a,key);
+    result = bitset4to8(temp);
+    result = funcReverseL(result);
+    temp = bitset8to4(result);
+    result = funcReverseS(temp);
+
+    /*cout << "reverseLSX: ";
     for (int i = 0; i < 16; i++)
         cout << hex << result[i].to_ulong();
-    cout << endl;
+    cout << endl;*/
 
     return result;
 }
-*/
+
 
 // ========= C ==============
 
@@ -318,6 +337,7 @@ int funcF(vector<bitset<4> > key1, vector<bitset<4> > key2, vector<bitset<8> > C
     return 0;
 } 
 
+// ============= Функция развертывания ключей ================
 vector<vector<bitset<4> > > expandKeys(vector<bitset<4> > key1, vector<bitset<4> > key2)
 {
     vector<vector<bitset<4> > > result(10);
@@ -340,18 +360,10 @@ vector<vector<bitset<4> > > expandKeys(vector<bitset<4> > key1, vector<bitset<4>
         result[2*j+3] = tempkey2;
     }
 
-    /*for(int i = 0;i<10;i++)
-    {
-        for(int j = 0;j<32;j++)
-        {
-                      cout << hex << result[i][j].to_ulong();
-
-        }
-        cout<<endl;
-    }*/
     return result;
 }
 
+// ============= Зашифрование ================
 int Encrypt(string a, string k1, string k2)
 {
     vector<vector<bitset<4> > > keys(10);
@@ -377,7 +389,8 @@ int Encrypt(string a, string k1, string k2)
 
     return 0;
 }
-/*
+
+// ============= Расшифрование ================
 int Decrypt(string a, string k1, string k2)
 {
     vector<vector<bitset<4> > > keys(10);
@@ -388,52 +401,37 @@ int Decrypt(string a, string k1, string k2)
     k2_binary = CharToBitset4(k2);
 
     keys = expandKeys(k1_binary, k2_binary);
-    tempLSX4 = funcX(a, keys[9]);
-    tempLSX8 = funcLSX(a_binary,keys[0]);
-    for(int i = 1; i < 9; i++)
+    tempLSX8 = funcReverseLSX(a_binary,keys[9]);
+    for(int i = 8; i > 0; i--)
     {
         tempLSX4 = bitset8to4(tempLSX8);
-        tempLSX8 = funcLSX(tempLSX4,keys[i]);
+        tempLSX8 = funcReverseLSX(tempLSX4,keys[i]);
     }
     tempLSX4 = bitset8to4(tempLSX8);
-    result = funcX(tempLSX4, keys[9]);
+    result = funcX(tempLSX4, keys[0]);
 
-        for (int i = 0; i < 32; i++)
+    for (int i = 0; i < 32; i++)
           cout << hex << result[i].to_ulong();
     cout << endl;
 
     return 0;
 }
-*/
+
 
 int main() {
 
     string a = "1122334455667700ffeeddccbbaa9988";
+    string b = "7f679d90bebc24305a468d42b9d4edcd";
     string k1 = "8899aabbccddeeff0011223344556677";
     string k2 = "fedcba98765432100123456789abcdef";
-    string a_string, k1_string, k2_string, ktemp1, ktemp2;
            
-    vector<bitset<4> > a_binary(32),a_temp4(32), test1(32), test3(32);
+    /*vector<bitset<4> > a_binary(32),b_binary(32),a_temp4(32), test1(32), test3(32);
     vector<bitset<4> > k1_binary(32),k1_temp4(32);
     vector<bitset<4> > k2_binary(32),k2_temp4(32);
-    vector<bitset<8> > a_temp8(16), C(16), test2(16), test4(16);
-
-
-    /*a_binary = CharToBitset4(a);
-    k1_binary = CharToBitset4(k1);
-    k2_binary = CharToBitset4(k2);
-    
-    string test = "0d8e40e4a800d06b2f1b37ea379ead8e";
-    
-    test2 = CharToBitset8(test);
-    
-    test4 = funcReverseL(test2);
-    
-    test1 = bitset8to4(test4);
-    
-    funcReverseS(test1);*/
+    vector<bitset<8> > a_temp8(16), C(16), test2(16), test4(16);*/
 
     Encrypt(a,k1,k2);
+    Decrypt(b,k1,k2);
 
     return 0;
 }
