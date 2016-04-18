@@ -364,14 +364,12 @@ vector<vector<bitset<4> > > expandKeys(vector<bitset<4> > key1, vector<bitset<4>
 }
 
 // ============= Зашифрование ================
-int Encrypt(string a, string k1, string k2)
+vector<bitset<4> > Encrypt(vector<bitset<4> > a_binary, vector<bitset<4> > k1_binary, vector<bitset<4> > k2_binary)
 {
     vector<vector<bitset<4> > > keys(10);
-    vector<bitset<4> > a_binary(32), k1_binary(32), k2_binary(32), tempLSX4(32), result(32);
+    vector<bitset<4> > tempLSX4(32), result(32);
     vector<bitset<8> > tempLSX8(16);
-    a_binary = CharToBitset4(a);
-    k1_binary = CharToBitset4(k1);
-    k2_binary = CharToBitset4(k2);
+
 
     keys = expandKeys(k1_binary, k2_binary);
     tempLSX8 = funcLSX(a_binary,keys[0]);
@@ -383,22 +381,19 @@ int Encrypt(string a, string k1, string k2)
     tempLSX4 = bitset8to4(tempLSX8);
     result = funcX(tempLSX4, keys[9]);
 
-        for (int i = 0; i < 32; i++)
+    for (int i = 0; i < 32; i++)
           cout << hex << result[i].to_ulong();
     cout << endl;
 
-    return 0;
+    return result;
 }
 
 // ============= Расшифрование ================
-int Decrypt(string a, string k1, string k2)
+vector<bitset<4> > Decrypt(vector<bitset<4> > a_binary, vector<bitset<4> > k1_binary, vector<bitset<4> > k2_binary)
 {
     vector<vector<bitset<4> > > keys(10);
-    vector<bitset<4> > a_binary(32), k1_binary(32), k2_binary(32), tempLSX4(32), result(32);
+    vector<bitset<4> > tempLSX4(32), result(32);
     vector<bitset<8> > tempLSX8(16);
-    a_binary = CharToBitset4(a);
-    k1_binary = CharToBitset4(k1);
-    k2_binary = CharToBitset4(k2);
 
     keys = expandKeys(k1_binary, k2_binary);
     tempLSX8 = funcReverseLSX(a_binary,keys[9]);
@@ -414,24 +409,55 @@ int Decrypt(string a, string k1, string k2)
           cout << hex << result[i].to_ulong();
     cout << endl;
 
+    return result;
+}
+
+// ============= Режим простой замены с зацеплением ================
+int CBC_encrypt(int m, string plaintext, string k1, string k2)
+{
+    vector<vector<bitset<4> > > PlainTextBitsets(m), CipherTextBitsets(1);
+    vector<bitset<4> > plaintext_binary(32),syncmessage_binary(32),k1_binary(32), k2_binary(32), temp(32);
+    string SyncMessage1 = "1234567890abcef0a1b2c3d4e5f00112", SyncMessage2 = "23344556677889901213141516171819";
+
+    plaintext_binary = CharToBitset4(plaintext);
+    syncmessage_binary = CharToBitset4(SyncMessage1);
+    k1_binary = CharToBitset4(k1);
+    k2_binary = CharToBitset4(k2);
+
+    for(int i = 0; i < 32; i++)
+    {
+        temp[i] = plaintext_binary[i] ^ syncmessage_binary[i];
+        cout << hex << temp[i].to_ulong();
+    }
+    cout<<endl;
+
+    CipherTextBitsets[0] = Encrypt(temp,k1_binary,k2_binary);
+
     return 0;
 }
 
 
-int main() {
 
+int main() {
     string a = "1122334455667700ffeeddccbbaa9988";
     string b = "7f679d90bebc24305a468d42b9d4edcd";
+    string P1 = "1122334455667700ffeeddccbbaa9988", P2 = "00112233445566778899aabbcceeff0a", P3 = "112233445566778899aabbcceeff0a00", P4 = "2233445566778899aabbcceeff0a0011";
     string k1 = "8899aabbccddeeff0011223344556677";
     string k2 = "fedcba98765432100123456789abcdef";
            
-    /*vector<bitset<4> > a_binary(32),b_binary(32),a_temp4(32), test1(32), test3(32);
+    vector<bitset<4> > a_binary(32),b_binary(32),a_temp4(32), test1(32), test3(32);
     vector<bitset<4> > k1_binary(32),k1_temp4(32);
     vector<bitset<4> > k2_binary(32),k2_temp4(32);
-    vector<bitset<8> > a_temp8(16), C(16), test2(16), test4(16);*/
+    vector<bitset<8> > a_temp8(16), C(16), test2(16), test4(16);
 
-    Encrypt(a,k1,k2);
-    Decrypt(b,k1,k2);
+    a_binary = CharToBitset4(a);
+    b_binary = CharToBitset4(b);
+    k1_binary = CharToBitset4(k1);
+    k2_binary = CharToBitset4(k2);
+
+    Encrypt(a_binary,k1_binary,k2_binary);
+    Decrypt(b_binary,k1_binary,k2_binary);
+    CBC_encrypt(256, P1,k1,k2);
 
     return 0;
 }
