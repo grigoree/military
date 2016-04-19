@@ -476,7 +476,7 @@ int CFB(int s, int m) {
     k1_binary = CharToBitset4(k1);
     k2_binary = CharToBitset4(k2);
     
-    string IV = "1234567890abcef0a1b2c3d4e5f001122334455667788990121314151617181";
+    string IV = "1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819";
     
     string in1 = "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011";
     
@@ -498,6 +498,7 @@ int CFB(int s, int m) {
     for (int i = 0; i < q - 1; i++){
         
         string msb = MSB(128, R[i]);
+        cout << "msb: " << msb << endl;
         vector<bitset<4> > msb_bin(32);
         msb_bin = CharToBitset4(msb);
         msb = MSB(s, Bitset4ToChar(msb_bin));
