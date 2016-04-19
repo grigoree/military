@@ -480,7 +480,7 @@ int CFB(int s, int m) {
     
     string in1 = "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011";
     
-    vector<bitset<4> > C(32);
+    vector<string> C;
     vector<string> R;
     vector<string> P;
     
@@ -504,20 +504,21 @@ int CFB(int s, int m) {
         msb_bin = Encrypt(CharToBitset4(msb), k1_binary, k2_binary);
         
         vector<bitset<4> > p_bin(32);
+        vector<bitset<4> > c_temp(32);
         
         p_bin = CharToBitset4(P[i]);
         
-        for (int i = 0; i < 32; i++)
-            C[i] = p_bin[i] ^ msb_bin[i];
+        for (int j = 0; j < 32; j++)
+              c_temp[j] = p_bin[j] ^ msb_bin[j];
         
-        string c_temp = Bitset4ToChar(C);
+        string c_str = Bitset4ToChar(c_temp);
         
-        cout << "C:" << c_temp << endl;
+        cout << "C:" << c_str << endl;
+        C.push_back(c_str);
         string lsb = LSB(m - s, R[i]);
-        cout << lsb;
-        string r_temp = lsb + c_temp;
-        //cout << "2";
+        string r_temp = lsb + c_str;
         //cout << "R:" << r_temp << endl;
+        R.push_back(r_temp);
     }
     
     return 0;
