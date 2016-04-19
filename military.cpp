@@ -426,29 +426,77 @@ vector<bitset<4> > Decrypt(vector<bitset<4> > a_binary, vector<bitset<4> > k1_bi
     return result;
 }
 
-// ============= Режим простой замены с зацеплением ================
-int CBC_encrypt(int m, string plaintext, string k1, string k2)
-{
-    vector<vector<bitset<4> > > PlainTextBitsets(m), CipherTextBitsets(1);
-    vector<bitset<4> > plaintext_binary(32),syncmessage_binary(32),k1_binary(32), k2_binary(32), temp(32);
-    string SyncMessage1 = "1234567890abcef0a1b2c3d4e5f00112", SyncMessage2 = "23344556677889901213141516171819";
+string LSB(int s, string value) {
+    return value.substr(value.size() - s / 4, s / 4);
+}
 
-    plaintext_binary = CharToBitset4(plaintext);
-    syncmessage_binary = CharToBitset4(SyncMessage1);
+string MSB(int s, string value) {
+    return value.substr(0, s / 4);
+}
+
+// ============= Режим простой замены с зацеплением ================
+int CBC_encrypt(int m)
+{
+
+    string k1 = "8899aabbccddeeff0011223344556677";
+    string k2 = "fedcba98765432100123456789abcdef";
+    
+    vector<bitset<4> > k1_binary(32), k2_binary(32);
+    
     k1_binary = CharToBitset4(k1);
     k2_binary = CharToBitset4(k2);
+    
+    string IV = "1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819";
+    
+    string in1 = "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011";
+    
+    vector<string> C;
+    vector<string> R;
+    vector<string> P;
+    
+    R.push_back(IV);
 
-    for(int i = 0; i < 32; i++)
-    {
-        temp[i] = plaintext_binary[i] ^ syncmessage_binary[i];
-        cout << hex << temp[i].to_ulong();
+    int q = 0;
+    int pos = 0;
+    while (pos < in1.size()) {
+        string temp = in1.substr(pos, 32);
+        P.push_back(temp);
+        pos += 32;
+        q += 1;
     }
-    cout<<endl;
 
-    CipherTextBitsets[0] = Encrypt(temp,k1_binary,k2_binary);
+    for (int i = 0; i < q - 1; i++){
+        
+        string msb = MSB(128, R[i]);
+        vector<bitset<4> > msb_bin(32);
+        msb_bin = CharToBitset4(msb);
+        
+        vector<bitset<4> > p_bin(32);
+        vector<bitset<4> > c_temp(32);
+        
+        p_bin = CharToBitset4(P[i]);
+        
+        cout << "input block: ";
+        for (int j = 0; j < 32; j++){
+            c_temp[j] = p_bin[j] ^ msb_bin[j];
+            cout << hex << c_temp[j].to_ulong();
+        }
+        cout << endl;
 
+        c_temp = Encrypt(c_temp,k1_binary,k2_binary);
+        
+        string c_str = Bitset4ToChar(c_temp);
+        
+        cout << "C:" << c_str << endl;
+        C.push_back(c_str);
+        string lsb = LSB(m - 128, R[i]);
+        string r_temp = lsb + c_str;
+        //cout << "R:" << r_temp << endl;
+        R.push_back(r_temp);
+    }
     return 0;
 }
+
 
 
 // Режим гаммирования
@@ -456,14 +504,6 @@ int CBC_encrypt(int m, string plaintext, string k1, string k2)
 int getIV(int m) {
     srand(time(0));
     return rand() % (int)pow(2, m - 1);
-}
-
-string LSB(int s, string value) {
-    return value.substr(value.size() - s / 4, s / 4);
-}
-
-string MSB(int s, string value) {
-    return value.substr(0, s / 4);
 }
 
 int CFB(int s, int m) {
@@ -546,9 +586,9 @@ int main() {
 
     //Encrypt(a_binary,k1_binary,k2_binary);
     //Decrypt(b_binary,k1_binary,k2_binary);
-    //CBC_encrypt(256, P1,k1,k2);
+    CBC_encrypt(256);
     
-    CFB(128, 256);
+    //CFB(128, 256);
 
     return 0;
 }
