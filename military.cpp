@@ -423,9 +423,9 @@ vector<bitset<4> > Decrypt(vector<bitset<4> > a_binary, vector<bitset<4> > k1_bi
     tempLSX4 = bitset8to4(tempLSX8);
     result = funcX(tempLSX4, keys[0]);
 
-    for (int i = 0; i < 32; i++)
-          cout << hex << result[i].to_ulong();
-    cout << endl;
+    // for (int i = 0; i < 32; i++)
+    //       cout << hex << result[i].to_ulong();
+    // cout << endl;
 
     return result;
 }
@@ -439,8 +439,15 @@ string MSB(int s, string value) {
 }
 
 // ============= Режим простой замены с зацеплением ================
-int CBC_encrypt(int m)
+int CBC_e(int m, string in1)
 {
+
+    cout << "CBC Encrypt." << endl;
+
+    if (in1.size() < m / 4) {
+        cout << "Error: size of string < m." << endl;
+        return -1;
+    }
 
     string k1 = "8899aabbccddeeff0011223344556677";
     string k2 = "fedcba98765432100123456789abcdef";
@@ -451,8 +458,6 @@ int CBC_encrypt(int m)
     k2_binary = CharToBitset4(k2);
     
     string IV = "1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819";
-    
-    string in1 = "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011";
     
     vector<string> C;
     vector<string> R;
@@ -469,7 +474,7 @@ int CBC_encrypt(int m)
         q += 1;
     }
 
-    for (int i = 0; i < q - 1; i++){
+    for (int i = 0; i < q; i++){
         
         string msb = MSB(128, R[i]);
         vector<bitset<4> > msb_bin(32);
@@ -480,12 +485,12 @@ int CBC_encrypt(int m)
         
         p_bin = CharToBitset4(P[i]);
         
-        cout << "input block: ";
+        //cout << "input block: ";
         for (int j = 0; j < 32; j++){
             c_temp[j] = p_bin[j] ^ msb_bin[j];
-            cout << hex << c_temp[j].to_ulong();
+           // cout << hex << c_temp[j].to_ulong();
         }
-        cout << endl;
+        //cout << endl;
 
         c_temp = Encrypt(c_temp,k1_binary,k2_binary);
         
@@ -498,10 +503,81 @@ int CBC_encrypt(int m)
         //cout << "R:" << r_temp << endl;
         R.push_back(r_temp);
     }
+
+    cout << endl;
+
     return 0;
 }
 
+int CBC_d(int m, string in1)
+{
 
+    cout << "CBC Decrypt." << endl;
+
+    if (in1.size() < m / 4) {
+        cout << "Error: size of string < m." << endl;
+        return -1;
+    }
+
+    string k1 = "8899aabbccddeeff0011223344556677";
+    string k2 = "fedcba98765432100123456789abcdef";
+    
+    vector<bitset<4> > k1_binary(32), k2_binary(32);
+    
+    k1_binary = CharToBitset4(k1);
+    k2_binary = CharToBitset4(k2);
+    
+    string IV = "1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819";
+    
+    vector<string> C;
+    vector<string> R;
+    vector<string> P;
+    
+    R.push_back(IV);
+
+    int q = 0;
+    int pos = 0;
+    while (pos < in1.size()) {
+        string temp = in1.substr(pos, 32);
+        C.push_back(temp);
+        pos += 32;
+        q += 1;
+    }
+
+    for (int i = 0; i < q; i++){
+        
+        string msb = MSB(128, R[i]);
+        vector<bitset<4> > msb_bin(32);
+        msb_bin = CharToBitset4(msb);
+        
+        vector<bitset<4> > c_bin(32), c_bin1(32);
+        vector<bitset<4> > p_temp(32);
+        
+        c_bin = CharToBitset4(C[i]);
+
+        c_bin1 = Decrypt(c_bin, k1_binary, k2_binary);
+        
+        //cout << "input block: ";
+        for (int j = 0; j < 32; j++){
+            p_temp[j] = c_bin1[j] ^ msb_bin[j];
+           // cout << hex << c_temp[j].to_ulong();
+        }
+        //cout << endl;
+
+        string p_str = Bitset4ToChar(p_temp);
+        
+        cout << "P: " << p_str << endl;
+        P.push_back(p_str);
+        string lsb = LSB(m - 128, R[i]);
+        string r_temp = lsb + Bitset4ToChar(c_bin);
+        //cout << "R:" << r_temp << endl;
+        R.push_back(r_temp);
+    }
+
+    cout << endl;
+    
+    return 0;
+}
 
 // Режим гаммирования
 
@@ -656,15 +732,18 @@ int main() {
 
     //Encrypt(a_binary,k1_binary,k2_binary);
     //Decrypt(b_binary,k1_binary,k2_binary);
-    //CBC_encrypt(256);
     
     string in = "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011";
-    
-    string out = "81800a59b1842b24ff1f795e897abd95ed5b47a7048cfab48fb521369d9326bf79f2a8eb5cc68d38842d264e97a238b54ffebecd4e922de6c75bd9dd44fbf4d1";
-    
+    string out1 = "689972d4a085fa4d90e52e3d6d7dcc272826e661b478eca6af1e8e448d5ea5acfe7babf1e91999e85640e8b0f49d90d0167688065a895c631a2d9a1560b63970";
+    string out2 = "81800a59b1842b24ff1f795e897abd95ed5b47a7048cfab48fb521369d9326bf79f2a8eb5cc68d38842d264e97a238b54ffebecd4e922de6c75bd9dd44fbf4d1";
+   
+    CBC_e(256, in);
+
+    CBC_d(256, out1);
+
     CFB_e(128, 256, in);
     
-    CFB_d(128, 256, out);
+    CFB_d(128, 256, out2);
 
     return 0;
 }
