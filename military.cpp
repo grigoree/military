@@ -114,6 +114,8 @@ vector<bitset<4> > bitset8to4(vector<bitset<8> > in){
     return result;
 }
 
+// ======= преобразование из bitset4 в bitset8 ======
+
 vector<bitset<8> > bitset4to8(vector<bitset<4> > in)
 {
         vector<bitset<8> > result(16);
@@ -126,6 +128,8 @@ vector<bitset<8> > bitset4to8(vector<bitset<4> > in)
     }
         return result;
 }
+
+// ======= преобразование из bitset4 в string ======
 
 string Bitset4ToChar(vector<bitset<4> > in) {
     string result;
@@ -506,7 +510,14 @@ int getIV(int m) {
     return rand() % (int)pow(2, m - 1);
 }
 
-int CFB(int s, int m) {
+int CFB_e(int s, int m, string in1) {
+    
+    cout << "CFB Encrypt." << endl;
+    
+    if (in1.size() < m / 4) {
+        cout << "Error: size of string < m." << endl;
+        return -1;
+    }
     
     string k1 = "8899aabbccddeeff0011223344556677";
     string k2 = "fedcba98765432100123456789abcdef";
@@ -517,8 +528,6 @@ int CFB(int s, int m) {
     k2_binary = CharToBitset4(k2);
     
     string IV = "1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819";
-    
-    string in1 = "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011";
     
     vector<string> C;
     vector<string> R;
@@ -535,10 +544,9 @@ int CFB(int s, int m) {
         q += 1;
     }
     
-    for (int i = 0; i < q - 1; i++){
+    for (int i = 0; i < q; i++){
         
         string msb = MSB(128, R[i]);
-        cout << "msb: " << msb << endl;
         vector<bitset<4> > msb_bin(32);
         msb_bin = CharToBitset4(msb);
         msb = MSB(s, Bitset4ToChar(msb_bin));
@@ -562,33 +570,101 @@ int CFB(int s, int m) {
         R.push_back(r_temp);
     }
     
+    cout << endl;
+    
+    return 0;
+}
+
+int CFB_d(int s, int m, string in1) {
+    
+    cout << "CFB Decrypt." << endl;
+    
+    string k1 = "8899aabbccddeeff0011223344556677";
+    string k2 = "fedcba98765432100123456789abcdef";
+    
+    vector<bitset<4> > k1_binary(32), k2_binary(32);
+    
+    k1_binary = CharToBitset4(k1);
+    k2_binary = CharToBitset4(k2);
+    
+    string IV = "1234567890abcef0a1b2c3d4e5f0011223344556677889901213141516171819";
+    
+    vector<string> C;
+    vector<string> R;
+    vector<string> P;
+    
+    R.push_back(IV);
+    
+    int q = 0;
+    int pos = 0;
+    while (pos < in1.size()) {
+        string temp = in1.substr(pos, s / 4);
+        C.push_back(temp);
+        pos += (s / 4);
+        q += 1;
+    }
+    
+    for (int i = 0; i < q; i++){
+        
+        string msb = MSB(128, R[i]);
+        vector<bitset<4> > msb_bin(32);
+        msb_bin = CharToBitset4(msb);
+        msb = MSB(s, Bitset4ToChar(msb_bin));
+        msb_bin = Encrypt(CharToBitset4(msb), k1_binary, k2_binary);
+        
+        vector<bitset<4> > c_bin(32);
+        vector<bitset<4> > p_temp(32);
+        
+        c_bin = CharToBitset4(C[i]);
+        
+        for (int j = 0; j < 32; j++)
+              p_temp[j] = c_bin[j] ^ msb_bin[j];
+        
+        string p_str = Bitset4ToChar(p_temp);
+        
+        cout << "P: " << p_str << endl;
+        P.push_back(p_str);
+        string lsb = LSB(m - s, R[i]);
+        string r_temp = lsb + Bitset4ToChar(c_bin);
+        //cout << "R:" << r_temp << endl;
+        R.push_back(r_temp);
+    }
+    
+    cout << endl;
+    
     return 0;
 }
 
 
 
 int main() {
-    string a = "1122334455667700ffeeddccbbaa9988";
-    string b = "7f679d90bebc24305a468d42b9d4edcd";
-    string P1 = "1122334455667700ffeeddccbbaa9988", P2 = "00112233445566778899aabbcceeff0a", P3 = "112233445566778899aabbcceeff0a00", P4 = "2233445566778899aabbcceeff0a0011";
-    string k1 = "8899aabbccddeeff0011223344556677";
-    string k2 = "fedcba98765432100123456789abcdef";
+   // string a = "1122334455667700ffeeddccbbaa9988";
+//    string b = "7f679d90bebc24305a468d42b9d4edcd";
+  //  string P1 = "1122334455667700ffeeddccbbaa9988", P2 = "00112233445566778899aabbcceeff0a", P3 = "112233445566778899aabbcceeff0a00", P4 = "2233445566778899aabbcceeff0a0011";
+    //string k1 = "8899aabbccddeeff0011223344556677";
+    //string k2 = "fedcba98765432100123456789abcdef";
            
-    vector<bitset<4> > a_binary(32),b_binary(32),a_temp4(32), test1(32), test3(32);
-    vector<bitset<4> > k1_binary(32),k1_temp4(32);
-    vector<bitset<4> > k2_binary(32),k2_temp4(32);
-    vector<bitset<8> > a_temp8(16), C(16), test2(16), test4(16);
+    //vector<bitset<4> > a_binary(32),b_binary(32),a_temp4(32), test1(32), test3(32);
+    //vector<bitset<4> > k1_binary(32),k1_temp4(32);
+    //vector<bitset<4> > k2_binary(32),k2_temp4(32);
+    //vector<bitset<8> > a_temp8(16), C(16), test2(16), test4(16);
 
-    a_binary = CharToBitset4(a);
-    b_binary = CharToBitset4(b);
-    k1_binary = CharToBitset4(k1);
-    k2_binary = CharToBitset4(k2);
+    //a_binary = CharToBitset4(a);
+    //b_binary = CharToBitset4(b);
+    //k1_binary = CharToBitset4(k1);
+    //k2_binary = CharToBitset4(k2);
 
     //Encrypt(a_binary,k1_binary,k2_binary);
     //Decrypt(b_binary,k1_binary,k2_binary);
-    CBC_encrypt(256);
+    //CBC_encrypt(256);
     
-    //CFB(128, 256);
+    string in = "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011";
+    
+    string out = "81800a59b1842b24ff1f795e897abd95ed5b47a7048cfab48fb521369d9326bf79f2a8eb5cc68d38842d264e97a238b54ffebecd4e922de6c75bd9dd44fbf4d1";
+    
+    CFB_e(128, 256, in);
+    
+    CFB_d(128, 256, out);
 
     return 0;
 }
