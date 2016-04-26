@@ -6,6 +6,8 @@
 #include <cmath>
 #include <stdlib.h>
 #include <ctime>
+#include <algorithm>
+#include <stdexcept>
 #include "table.h"
 
 using namespace std;
@@ -52,6 +54,47 @@ static const unsigned char kReversePi[256] =
 
 
 static const  unsigned char kB[16] = {148, 32, 133, 16, 194, 192, 1, 251, 1, 192, 194, 16, 133, 32, 148, 1};
+
+// ======= hex to string и обратно
+
+string string_to_hex(const string& input)
+{
+    static const char* const lut = "0123456789abcdef";
+    size_t len = input.length();
+
+    string output;
+    output.reserve(2 * len);
+    for (size_t i = 0; i < len; ++i)
+    {
+        const unsigned char c = input[i];
+        output.push_back(lut[c >> 4]);
+        output.push_back(lut[c & 15]);
+    }
+    return output;
+}
+
+string hex_to_string(const string& input)
+{
+    static const char* const lut = "0123456789abcdef";
+    size_t len = input.length();
+    if (len & 1) throw invalid_argument("odd length");
+
+    string output;
+    output.reserve(len / 2);
+    for (size_t i = 0; i < len; i += 2)
+    {
+        char a = input[i];
+        const char* p = lower_bound(lut, lut + 16, a);
+        if (*p != a) throw invalid_argument("not a hex digit");
+
+        char b = input[i + 1];
+        const char* q = lower_bound(lut, lut + 16, b);
+        if (*q != b) throw invalid_argument("not a hex digit");
+
+        output.push_back(((p - lut) << 4) | (q - lut));
+    }
+    return output;
+}
 
 // ======= преобразование из string в bitset4 ======
 
@@ -135,9 +178,9 @@ string Bitset4ToChar(vector<bitset<4> > in) {
     string result;
     
     for (int i = 0; i < in.size(); i++){
-        std::stringstream stream;
-        stream << std::hex << in[i].to_ulong();
-        std::string temp( stream.str() );
+        stringstream stream;
+        stream << hex << in[i].to_ulong();
+        string temp( stream.str() );
         result += temp;
     }
     
@@ -439,18 +482,19 @@ string MSB(int s, string value) {
 }
 
 // ============= Режим простой замены с зацеплением ================
-int CBC_e(int m, string in1)
+string CBC_e(int m, string in1)
 {
 
     cout << "CBC Encrypt." << endl;
 
     if (in1.size() < m / 4) {
         cout << "Error: size of string < m." << endl;
-        return -1;
+        return "err";
     }
 
     string k1 = "8899aabbccddeeff0011223344556677";
     string k2 = "fedcba98765432100123456789abcdef";
+    string c_res;
     
     vector<bitset<4> > k1_binary(32), k2_binary(32);
     
@@ -495,6 +539,7 @@ int CBC_e(int m, string in1)
         c_temp = Encrypt(c_temp,k1_binary,k2_binary);
         
         string c_str = Bitset4ToChar(c_temp);
+        c_res += c_str;
         
         cout << "C:" << c_str << endl;
         C.push_back(c_str);
@@ -506,17 +551,17 @@ int CBC_e(int m, string in1)
 
     cout << endl;
 
-    return 0;
+    return c_res;
 }
 
-int CBC_d(int m, string in1)
+string CBC_d(int m, string in1)
 {
 
     cout << "CBC Decrypt." << endl;
 
     if (in1.size() < m / 4) {
         cout << "Error: size of string < m." << endl;
-        return -1;
+        return "err";
     }
 
     string k1 = "8899aabbccddeeff0011223344556677";
@@ -543,6 +588,8 @@ int CBC_d(int m, string in1)
         pos += 32;
         q += 1;
     }
+    
+    string p_res;
 
     for (int i = 0; i < q; i++){
         
@@ -568,6 +615,7 @@ int CBC_d(int m, string in1)
         
         cout << "P: " << p_str << endl;
         P.push_back(p_str);
+        p_res += p_str;
         string lsb = LSB(m - 128, R[i]);
         string r_temp = lsb + Bitset4ToChar(c_bin);
         //cout << "R:" << r_temp << endl;
@@ -576,7 +624,7 @@ int CBC_d(int m, string in1)
 
     cout << endl;
     
-    return 0;
+    return p_res;
 }
 
 // Режим гаммирования
@@ -586,13 +634,13 @@ int getIV(int m) {
     return rand() % (int)pow(2, m - 1);
 }
 
-int CFB_e(int s, int m, string in1) {
+string CFB_e(int s, int m, string in1) {
     
     cout << "CFB Encrypt." << endl;
     
     if (in1.size() < m / 4) {
         cout << "Error: size of string < m." << endl;
-        return -1;
+        return "err";
     }
     
     string k1 = "8899aabbccddeeff0011223344556677";
@@ -620,6 +668,8 @@ int CFB_e(int s, int m, string in1) {
         q += 1;
     }
     
+    string c_res;
+    
     for (int i = 0; i < q; i++){
         
         string msb = MSB(128, R[i]);
@@ -639,6 +689,7 @@ int CFB_e(int s, int m, string in1) {
         string c_str = Bitset4ToChar(c_temp);
         
         cout << "C:" << c_str << endl;
+        c_res += c_str;
         C.push_back(c_str);
         string lsb = LSB(m - s, R[i]);
         string r_temp = lsb + c_str;
@@ -648,10 +699,10 @@ int CFB_e(int s, int m, string in1) {
     
     cout << endl;
     
-    return 0;
+    return c_res;
 }
 
-int CFB_d(int s, int m, string in1) {
+string CFB_d(int s, int m, string in1) {
     
     cout << "CFB Decrypt." << endl;
     
@@ -668,6 +719,8 @@ int CFB_d(int s, int m, string in1) {
     vector<string> C;
     vector<string> R;
     vector<string> P;
+    
+    string p_res;
     
     R.push_back(IV);
     
@@ -700,6 +753,7 @@ int CFB_d(int s, int m, string in1) {
         
         cout << "P: " << p_str << endl;
         P.push_back(p_str);
+        p_res += p_str;
         string lsb = LSB(m - s, R[i]);
         string r_temp = lsb + Bitset4ToChar(c_bin);
         //cout << "R:" << r_temp << endl;
@@ -708,42 +762,53 @@ int CFB_d(int s, int m, string in1) {
     
     cout << endl;
     
-    return 0;
+    return p_res;
 }
 
 
 
 int main() {
-   // string a = "1122334455667700ffeeddccbbaa9988";
-//    string b = "7f679d90bebc24305a468d42b9d4edcd";
-  //  string P1 = "1122334455667700ffeeddccbbaa9988", P2 = "00112233445566778899aabbcceeff0a", P3 = "112233445566778899aabbcceeff0a00", P4 = "2233445566778899aabbcceeff0a0011";
-    //string k1 = "8899aabbccddeeff0011223344556677";
-    //string k2 = "fedcba98765432100123456789abcdef";
-           
-    //vector<bitset<4> > a_binary(32),b_binary(32),a_temp4(32), test1(32), test3(32);
-    //vector<bitset<4> > k1_binary(32),k1_temp4(32);
-    //vector<bitset<4> > k2_binary(32),k2_temp4(32);
-    //vector<bitset<8> > a_temp8(16), C(16), test2(16), test4(16);
-
-    //a_binary = CharToBitset4(a);
-    //b_binary = CharToBitset4(b);
-    //k1_binary = CharToBitset4(k1);
-    //k2_binary = CharToBitset4(k2);
-
-    //Encrypt(a_binary,k1_binary,k2_binary);
-    //Decrypt(b_binary,k1_binary,k2_binary);
-    
-    string in = "1122334455667700ffeeddccbbaa998800112233445566778899aabbcceeff0a112233445566778899aabbcceeff0a002233445566778899aabbcceeff0a0011";
-    string out1 = "689972d4a085fa4d90e52e3d6d7dcc272826e661b478eca6af1e8e448d5ea5acfe7babf1e91999e85640e8b0f49d90d0167688065a895c631a2d9a1560b63970";
-    string out2 = "81800a59b1842b24ff1f795e897abd95ed5b47a7048cfab48fb521369d9326bf79f2a8eb5cc68d38842d264e97a238b54ffebecd4e922de6c75bd9dd44fbf4d1";
    
-    CBC_e(256, in);
-
-    CBC_d(256, out1);
-
-    CFB_e(128, 256, in);
+   // string in = "Hello world. It is test. Good test. Very very very very very good test. ";
     
-    CFB_d(128, 256, out2);
+    string in;
+    cout << "Enter message: ";
+    cin >> in;
+    cout << endl;
+    
+    while (string_to_hex(in).length() < 256)
+        in += "        ";
+    in = string_to_hex(in);
+    string temp;
+    
+    cout << "Choose CBC(0) or CFB(1): ";
+    int i;
+    cin >> i;
+    cout << endl;
+    
+    if (i == 0){
+        temp = CBC_e(256, in);
+    
+        string out;
+
+        out = CBC_d(256, temp);
+    
+        out = hex_to_string(out);
+    
+        cout << out << endl;
+    } else if (i == 1) {
+        temp = CFB_e(128, 256, in);
+    
+        string out;
+
+        out = CFB_d(128, 256, temp);
+    
+        out = hex_to_string(out);
+    
+        cout << out << endl;
+        
+    } else
+        cout << "error" << endl;
 
     return 0;
 }
